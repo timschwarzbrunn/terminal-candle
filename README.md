@@ -1,4 +1,4 @@
 # terminal-candle
 A candle that lights within your terminal.
 
-![example](./assets/example.png)
+![example](https://github.com/startbit96/terminal-candle/blob/main/assets/example.gif)
