@@ -4,8 +4,7 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::screen::IntoAlternateScreen;
 
-fn print_candle<W: Write>(screen: &mut W) {
-    let candle = r#"
+const CANDLE: &str = r#"
        . .
      .     .
    .         .
@@ -24,9 +23,9 @@ fn print_candle<W: Write>(screen: &mut W) {
    │         │
    │         │
 ╒══⎬═════════╪══╕ 
- ╲‗‗‗‗‗‗‗‗‗‗‗‗‗╱
-        "#;
+ ╲‗‗‗‗‗‗‗‗‗‗‗‗‗╱"#;
 
+fn get_candle_position() -> (u16, u16) {
     // Get the size of the terminal.
     let (terminal_width, terminal_height) = termion::terminal_size().unwrap();
 
@@ -34,7 +33,7 @@ fn print_candle<W: Write>(screen: &mut W) {
     let mut candle_width = 0;
     let mut candle_height = 0;
 
-    for line in candle.lines() {
+    for line in CANDLE.lines() {
         let line_width = line.chars().count();
         if line_width > candle_width {
             candle_width = line_width;
@@ -46,9 +45,13 @@ fn print_candle<W: Write>(screen: &mut W) {
     let candle_pos_x = (terminal_width - candle_width as u16) / 2;
     let candle_pos_y = (terminal_height - candle_height as u16) / 2;
 
+    return (candle_pos_x, candle_pos_y);
+}
+
+fn print_candle<W: Write>(screen: &mut W) {
     // Print the candle centered to the screen.
-    write!(screen, "{}", termion::cursor::Goto(1, 1)).unwrap();
-    for (idx, line) in candle.lines().enumerate() {
+    let (candle_pos_x, candle_pos_y) = get_candle_position();
+    for (idx, line) in CANDLE.lines().enumerate() {
         write!(
             screen,
             "{}{}",
