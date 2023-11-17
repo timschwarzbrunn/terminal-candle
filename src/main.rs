@@ -1,5 +1,6 @@
 use rand::Rng;
 use std::io::{stdin, stdout, Write};
+use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 use termion::event::Key;
@@ -117,6 +118,8 @@ fn update_candle<W: Write>(screen: &mut W, candle_old: &String, candle_new: &Str
     screen.flush().unwrap();
 }
 
+struct ExitMainLoop;
+
 fn main() {
     // Initialize alternate screen in raw mode.
     let mut screen = stdout()
@@ -132,18 +135,34 @@ fn main() {
     print_candle(&mut screen);
     let mut candle_old = String::from(CANDLE);
 
-    'main_loop: loop {
+    let (tx, rx) = channel();
+    let quit_thread = thread::spawn(move || {
+        while let Some(Ok(key)) = stdin().keys().next() {
+            match key {
+                Key::Char('q') => {
+                    tx.send(ExitMainLoop).unwrap();
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
+
+    loop {
         // Update the candle.
         let candle_new = get_updated_candle(&candle_old, 0.1);
         update_candle(&mut screen, &candle_old, &candle_new);
         candle_old = candle_new;
 
-        // How to handle user input to quit the program?
+        if let Ok(_) = rx.try_recv() {
+            break;
+        }
 
         // Wait for a little bit until the next update.
         thread::sleep(Duration::from_secs(1));
     }
 
     // Clean up.
+    quit_thread.join().unwrap();
     write!(screen, "{}", termion::cursor::Show).unwrap();
 }
